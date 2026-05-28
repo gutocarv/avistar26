@@ -594,13 +594,14 @@ function wrapText(text, font, size, maxW) {
 }
 
 function wrapSegments(segments, size, maxW, fontReg, fontBold) {
+  // Concatena tudo num stream de {text, bold} preservando espaços
   const tokens = [];
   for (const { text, bold } of segments) {
-    const words = text.split(' ');
-    words.forEach((w, i) => {
-      const token = (i < words.length - 1 || text.endsWith(' ')) ? w + ' ' : w;
-      if (w.trim()) tokens.push({ text: token, bold });
-    });
+    // Divide preservando os espaços como tokens separados
+    const parts = text.split(/( +)/);
+    for (const part of parts) {
+      if (part.length > 0) tokens.push({ text: part, bold });
+    }
   }
 
   const lines = [];
