@@ -237,6 +237,52 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── Períodos ── */
+  .periodos-box {
+    display: none;
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--teal-light);
+    border: 1px solid #b0d8d8;
+    border-radius: 8px;
+  }
+  .periodos-box h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--teal-dark);
+    margin-bottom: 14px;
+  }
+  .periodos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .periodo-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    font-size: 0.85rem;
+    color: var(--text);
+    user-select: none;
+  }
+  .periodo-item:hover { border-color: var(--teal); }
+  .periodo-item input { accent-color: var(--teal); cursor: pointer; }
+  .periodo-item.checked { border-color: var(--teal); background: var(--teal-light); }
+  .horas-badge {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .horas-badge strong { color: var(--teal-dark); font-size: 1rem; }
+
   footer {
     text-align: center;
     padding: 20px;
@@ -282,7 +328,36 @@
     </div>
 
     <!-- Resultados -->
-    <div id="resultados">
+    <!-- Seleção de períodos -->
+<div class="periodos-box" id="periodos-box">
+  <h4>Em quais períodos você participou?</h4>
+  <div class="periodos-grid">
+    <label class="periodo-item" id="lbl-sm" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sm"> Sexta manhã
+    </label>
+    <label class="periodo-item" id="lbl-st" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-st"> Sexta tarde
+    </label>
+    <label class="periodo-item" id="lbl-sam" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sam"> Sábado manhã
+    </label>
+    <label class="periodo-item" id="lbl-sat" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sat"> Sábado tarde
+    </label>
+    <label class="periodo-item" id="lbl-dm" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-dm"> Domingo manhã
+    </label>
+    <label class="periodo-item" id="lbl-dt" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-dt"> Domingo tarde
+    </label>
+  </div>
+  <div class="horas-badge" id="horas-badge">Selecione ao menos um período</div>
+  <button class="btn" id="btn-gerar-part" onclick="confirmarPeriodos()" disabled>
+    Gerar certificado de participação
+  </button>
+</div>
+
+<div id="resultados">
       <h3 id="resultado-saudacao"></h3>
       <div id="lista-certs"></div>
     </div>
@@ -410,13 +485,17 @@ function mostrarResultados(inscrito, palestrante, coautor) {
   const nome = inscrito?.nome || palestrante?.[0]?.autores?.split(',')[0] || 'Participante';
   document.getElementById('resultado-saudacao').textContent = `Olá, ${nome}`;
 
-  // Certificado de participação
+  // Certificado de participação — guarda inscrito para usar após seleção de períodos
   if (inscrito) {
-    lista.appendChild(criarItemCert(
-      'Certificado de Participação',
-      `${inscrito.credencial} · Avistar 2026`,
-      () => gerarCertParticipante(inscrito)
-    ));
+    window._inscritoAtual = inscrito;
+    document.getElementById('periodos-box').style.display = 'block';
+    // reset checkboxes
+    document.querySelectorAll('.periodo-item input').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.periodo-item').classList.remove('checked');
+    });
+    document.getElementById('horas-badge').innerHTML = 'Selecione ao menos um período';
+    document.getElementById('btn-gerar-part').disabled = true;
   }
 
   // Certificado(s) de apresentação (1º autor)
@@ -469,7 +548,7 @@ function criarItemCert(tipo, titulo, onDownload) {
 }
 
 // ── Geração de PDF — participante ─────────────────────────────────────────
-async function gerarCertParticipante(inscrito) {
+async function gerarCertParticipante(inscrito, horas) {
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
   const pdfDoc = await PDFDocument.load(pdfBaseBytes);
@@ -496,10 +575,17 @@ async function gerarCertParticipante(inscrito) {
     { text: "A Comissão Organizadora do Encontro Brasileiro de Observação de Aves certifica que", bold: false },
   ];
   const nome = inscrito.nome;
+  const sufixo = horas
+    ? ` da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo, tendo cumprido `
+    : ` da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo.`;
   const corpo = [
     { text: "participou como ", bold: false },
     { text: inscrito.credencial + " ", bold: true },
-    { text: " da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo.", bold: false },
+    { text: sufixo, bold: false },
+    ...(horas ? [
+      { text: `${horas} horas`, bold: true },
+      { text: " de atividades.", bold: false },
+    ] : []),
   ];
 
   // Quebrar linhas
@@ -656,6 +742,53 @@ function wrapSegments(segments, size, maxW, fontReg, fontBold) {
   }
   if (line.length) lines.push(line);
   return lines;
+}
+
+function togglePeriodo(label) {
+  const cb = label.querySelector('input');
+  // O click já vai alternar o checkbox — aguarda o tick
+  setTimeout(() => {
+    label.classList.toggle('checked', cb.checked);
+    atualizarHoras();
+  }, 0);
+}
+
+function atualizarHoras() {
+  const checkboxes = document.querySelectorAll('.periodos-grid input[type=checkbox]');
+  const total = Array.from(checkboxes).filter(c => c.checked).reduce((s, c) => s + parseInt(c.value), 0);
+  const badge = document.getElementById('horas-badge');
+  const btn   = document.getElementById('btn-gerar-part');
+  if (total === 0) {
+    badge.innerHTML = 'Selecione ao menos um período';
+    btn.disabled = true;
+  } else {
+    badge.innerHTML = `Total: <strong>${total} horas</strong> de atividades`;
+    btn.disabled = false;
+  }
+}
+
+function confirmarPeriodos() {
+  const checkboxes = document.querySelectorAll('.periodos-grid input[type=checkbox]');
+  const total = Array.from(checkboxes).filter(c => c.checked).reduce((s, c) => s + parseInt(c.value), 0);
+  if (total === 0 || !window._inscritoAtual) return;
+
+  // Esconde seletor e mostra botão de download nos resultados
+  document.getElementById('periodos-box').style.display = 'none';
+
+  const lista = document.getElementById('lista-certs');
+  // Remove item de participação anterior se existir
+  const existing = document.getElementById('cert-participacao');
+  if (existing) existing.remove();
+
+  const item = criarItemCert(
+    'Certificado de Participação',
+    `${window._inscritoAtual.credencial} · ${total}h de atividades`,
+    () => gerarCertParticipante(window._inscritoAtual, total)
+  );
+  item.id = 'cert-participacao';
+  // Insere no início da lista
+  lista.insertBefore(item, lista.firstChild);
+  document.getElementById('resultados').style.display = 'block';
 }
 
 function download(bytes, filename) {
