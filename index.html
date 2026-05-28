@@ -599,7 +599,7 @@ function wrapSegments(segments, size, maxW, fontReg, fontBold) {
     const words = text.split(' ');
     words.forEach((w, i) => {
       const token = (i < words.length - 1 || text.endsWith(' ')) ? w + ' ' : w;
-      if (token.trim()) tokens.push({ text: token, bold });
+      if (w.trim()) tokens.push({ text: token, bold });
     });
   }
 
