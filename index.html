@@ -275,13 +275,6 @@
   .periodo-item:hover { border-color: var(--teal); }
   .periodo-item input { accent-color: var(--teal); cursor: pointer; }
   .periodo-item.checked { border-color: var(--teal); background: var(--teal-light); }
-  .horas-badge {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 14px;
-  }
-  .horas-badge strong { color: var(--teal-dark); font-size: 1rem; }
 
   footer {
     text-align: center;
@@ -351,7 +344,6 @@
       <input type="checkbox" value="4" id="p-dt"> Domingo tarde
     </label>
   </div>
-  <div class="horas-badge" id="horas-badge">Selecione ao menos um período</div>
   <button class="btn" id="btn-gerar-part" onclick="confirmarPeriodos()" disabled>
     Gerar certificado de participação
   </button>
@@ -494,7 +486,6 @@ function mostrarResultados(inscrito, palestrante, coautor) {
       cb.checked = false;
       cb.closest('.periodo-item').classList.remove('checked');
     });
-    document.getElementById('horas-badge').innerHTML = 'Selecione ao menos um período';
     document.getElementById('btn-gerar-part').disabled = true;
   }
 
@@ -756,13 +747,10 @@ function togglePeriodo(label) {
 function atualizarHoras() {
   const checkboxes = document.querySelectorAll('.periodos-grid input[type=checkbox]');
   const total = Array.from(checkboxes).filter(c => c.checked).reduce((s, c) => s + parseInt(c.value), 0);
-  const badge = document.getElementById('horas-badge');
   const btn   = document.getElementById('btn-gerar-part');
   if (total === 0) {
-    badge.innerHTML = 'Selecione ao menos um período';
     btn.disabled = true;
   } else {
-    badge.innerHTML = '';
     btn.disabled = false;
   }
 }
