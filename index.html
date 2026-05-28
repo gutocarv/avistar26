@@ -6,7 +6,7 @@
 <title>Certificados · Avistar 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fontfaceobserver/2.3.0/fontfaceobserver.standalone.js"></script>
+<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 
 <style>
   :root {
@@ -435,7 +435,7 @@ async function gerarCertParticipante(inscrito) {
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
   const pdfDoc = await PDFDocument.load(pdfBaseBytes);
-  pdfDoc.registerFontkit(window.fontkit || PDFLib.fontkit);
+  pdfDoc.registerFontkit(fontkit);
 
   const fontReg  = await pdfDoc.embedFont(ubuntuBytes);
   const fontBold = await pdfDoc.embedFont(ubuntuBoldBytes);
@@ -512,7 +512,7 @@ async function gerarCertPalestrante(trabalho) {
   const { PDFDocument, rgb } = PDFLib;
 
   const pdfDoc = await PDFDocument.load(pdfBaseBytes);
-  pdfDoc.registerFontkit(window.fontkit || PDFLib.fontkit);
+  pdfDoc.registerFontkit(fontkit);
 
   const fontReg  = await pdfDoc.embedFont(ubuntuBytes);
   const fontBold = await pdfDoc.embedFont(ubuntuBoldBytes);
