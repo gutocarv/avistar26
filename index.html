@@ -6,7 +6,7 @@
 <title>Certificados · Avistar 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<script src="fontkit.umd.min.js"></script>
 
 <style>
   :root {
@@ -460,7 +460,7 @@ async function gerarCertParticipante(inscrito) {
   const nome = inscrito.nome;
   const corpo = [
     { text: "participou como ", bold: false },
-    { text: inscrito.credencial, bold: true },
+    { text: inscrito.credencial + " ", bold: true },
     { text: " da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo.", bold: false },
   ];
 
