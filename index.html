@@ -291,6 +291,27 @@
 
 <footer>
   Avistar 2026 · Jardim Botânico de São Paulo · 15 a 17 de maio de 2026
+  <br><br>
+  <a href="https://www.tytobiodata.com/" target="_blank" style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--muted);font-size:0.78rem;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+    <img src="tyto_logo.png" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">
+    Solução inspirada por Tyto Biodata
+  </a>
+  <br><br>
+  <a href="mailto:avistarconecta@gmail.com" style="
+    display: inline-block;
+    padding: 9px 20px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  " onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'"
+     onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+    ✉ Dúvidas? Fale conosco
+  </a>
 </footer>
 
 <script>
@@ -298,6 +319,7 @@
 let DB_INSCRITOS    = null;
 let DB_NOMES        = null;
 let DB_PALESTRANTES = null;
+let DB_COAUTORES    = null;
 let pdfBaseBytes    = null;
 let ubuntuBytes     = null;
 let ubuntuBoldBytes = null;
@@ -305,10 +327,11 @@ let ubuntuBoldBytes = null;
 // ── Carregamento dos dados ────────────────────────────────────────────────
 async function carregarDados() {
   const base = window.location.pathname.replace(/\/[^/]*$/, '');
-  const [ins, nom, pal, pdf, font, fontB] = await Promise.all([
+  const [ins, nom, pal, coaut, pdf, font, fontB] = await Promise.all([
     fetch(`${base}/inscritos.json`).then(r => r.json()),
     fetch(`${base}/inscritos_por_nome.json`).then(r => r.json()),
     fetch(`${base}/palestrantes.json`).then(r => r.json()),
+    fetch(`${base}/coautores.json`).then(r => r.json()),
     fetch(`${base}/certificados.pdf`).then(r => r.arrayBuffer()),
     fetch(`${base}/Ubuntu-Regular.ttf`).then(r => r.arrayBuffer()),
     fetch(`${base}/Ubuntu-Bold.ttf`).then(r => r.arrayBuffer()),
@@ -316,6 +339,7 @@ async function carregarDados() {
   DB_INSCRITOS    = ins;
   DB_NOMES        = nom;
   DB_PALESTRANTES = pal;
+  DB_COAUTORES    = coaut;
   pdfBaseBytes    = pdf;
   ubuntuBytes     = font;
   ubuntuBoldBytes = fontB;
@@ -341,8 +365,8 @@ async function buscarPorEmail() {
   const palestrante = DB_PALESTRANTES[email] || null;
 
   if (!inscrito && !palestrante) {
-    showMsg('msg-principal', 'error',
-      'E-mail não encontrado. Verifique se digitou corretamente ou use a busca pelo nome abaixo.');
+    showMsg('msg-principal', 'info',
+      'E-mail não encontrado na base principal. Se você é coautor(a) de um trabalho, digite seu nome completo abaixo para buscarmos.');
     document.getElementById('nome-fallback').style.display = 'block';
     document.getElementById('resultados').style.display = 'none';
     return;
@@ -350,7 +374,7 @@ async function buscarPorEmail() {
 
   showMsg('msg-principal', 'success', 'Inscrição encontrada! Seus certificados estão prontos.');
   document.getElementById('nome-fallback').style.display = 'none';
-  mostrarResultados(inscrito, palestrante);
+  mostrarResultados(inscrito, palestrante, null);
 }
 
 // ── Busca por nome ────────────────────────────────────────────────────────
@@ -360,24 +384,26 @@ async function buscarPorNome() {
   const chave = normNome(nomeDigitado);
   if (!chave) { showMsg('msg-nome', 'error', 'Por favor, digite seu nome completo.'); return; }
 
-  const inscrito = DB_NOMES[chave] || null;
-  if (!inscrito) {
+  const inscrito    = DB_NOMES[chave] || null;
+  const coautor     = DB_COAUTORES[chave] || null;
+
+  if (!inscrito && !coautor) {
     showMsg('msg-nome', 'error',
-      'Nome não encontrado. Verifique se digitou exatamente como estava na inscrição.');
+      'Nome não encontrado. Verifique se digitou exatamente como estava na inscrição ou no trabalho submetido.');
     return;
   }
 
-  // Tenta encontrar palestrante pelo nome também
+  // Palestrante pelo nome (1º autor)
   const palestrante = Object.entries(DB_PALESTRANTES)
     .find(([, works]) => normNome(works[0]?.autores?.split(',')[0] || '') === chave)?.[1] || null;
 
   hideMsg('msg-nome');
-  showMsg('msg-principal', 'success', 'Inscrição encontrada pelo nome!');
-  mostrarResultados(inscrito, palestrante);
+  showMsg('msg-principal', 'success', 'Encontrado! Seus certificados estão prontos.');
+  mostrarResultados(inscrito, palestrante, coautor);
 }
 
 // ── Exibe certificados disponíveis ───────────────────────────────────────
-function mostrarResultados(inscrito, palestrante) {
+function mostrarResultados(inscrito, palestrante, coautor) {
   const lista = document.getElementById('lista-certs');
   lista.innerHTML = '';
 
@@ -393,12 +419,24 @@ function mostrarResultados(inscrito, palestrante) {
     ));
   }
 
-  // Certificado(s) de apresentação
+  // Certificado(s) de apresentação (1º autor)
   if (palestrante) {
-    palestrante.forEach((trabalho, i) => {
+    palestrante.forEach((trabalho) => {
       const label = trabalho.label.charAt(0).toUpperCase() + trabalho.label.slice(1);
       lista.appendChild(criarItemCert(
         `Certificado de ${label}`,
+        trabalho.titulo.length > 70 ? trabalho.titulo.slice(0, 70) + '…' : trabalho.titulo,
+        () => gerarCertPalestrante(trabalho)
+      ));
+    });
+  }
+
+  // Certificado(s) de coautoria
+  if (coautor) {
+    coautor.forEach((trabalho) => {
+      const label = trabalho.label.charAt(0).toUpperCase() + trabalho.label.slice(1);
+      lista.appendChild(criarItemCert(
+        `Certificado de Coautoria — ${label}`,
         trabalho.titulo.length > 70 ? trabalho.titulo.slice(0, 70) + '…' : trabalho.titulo,
         () => gerarCertPalestrante(trabalho)
       ));
