@@ -428,6 +428,13 @@ async function buscarPorEmail() {
   const email = normEmail(document.getElementById('input-email').value);
   if (!email) { showMsg('msg-principal', 'error', 'Por favor, digite seu e-mail.'); return; }
 
+  // Bloqueia reemissão na mesma sessão
+  if (sessionStorage.getItem('cert_emitido_' + email)) {
+    showMsg('msg-principal', 'error',
+      'Certificado já emitido nessa sessão!');
+    return;
+  }
+
   const inscrito    = DB_INSCRITOS[email]    || null;
   const palestrante = DB_PALESTRANTES[email] || null;
 
@@ -618,7 +625,20 @@ async function gerarCertParticipante(inscrito, horas) {
     y -= LHN;
   }
 
-  const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await pdfDoc.save({
+    permissions: {
+      printing: 'highResolution',
+      copying: false,
+      modifyAnnotations: false,
+      modifyContents: false,
+    },
+    ownerPassword: 'Pira4#ara',
+    userPassword: undefined,
+    encryptionKey: 128,
+  });
+  // Marca sessão como emitida
+  const emailAtual = normEmail(document.getElementById('input-email').value);
+  if (emailAtual) sessionStorage.setItem('cert_emitido_' + emailAtual, '1');
   download(pdfBytes, `certificado_${nome.replace(/\s+/g,'_')}.pdf`);
 }
 
@@ -685,7 +705,20 @@ async function gerarCertPalestrante(trabalho) {
   drawCenter(lAutores,fontBold, SA, LHA, TEAL); y -= GAP;
   drawLeft(lEncerra, fontReg,  SN, LHN, DARK);
 
-  const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await pdfDoc.save({
+    permissions: {
+      printing: 'highResolution',
+      copying: false,
+      modifyAnnotations: false,
+      modifyContents: false,
+    },
+    ownerPassword: 'Pira4#ara',
+    userPassword: undefined,
+    encryptionKey: 128,
+  });
+  // Marca sessão como emitida
+  const emailAtual = normEmail(document.getElementById('input-email').value);
+  if (emailAtual) sessionStorage.setItem('cert_emitido_' + emailAtual, '1');
   const safeName = trabalho.titulo.slice(0,30).replace(/\s+/g,'_').replace(/[^\w_]/g,'');
   download(pdfBytes, `certificado_${safeName}.pdf`);
 }
