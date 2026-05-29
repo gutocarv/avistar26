@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificados · Avistar 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="fontkit.umd.min.js"></script>
+<script src="pdf.min.js"></script>
+
+<style>
+  :root {
+    --teal:       #176f6f;
+    --teal-light: #e8f4f4;
+    --teal-dark:  #0e4a4a;
+    --wine:       #5a1a1a;
+    --cream:      #fdf6ee;
+    --text:       #2a2a2a;
+    --muted:      #777;
+    --border:     #d8cfc5;
+    --error:      #c0392b;
+    --success:    #176f6f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--wine);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  header img { height: 56px; }
+  header .title-block h1 {
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+    font-size: 1.5rem;
+    letter-spacing: 0.02em;
+  }
+  header .title-block p {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.82rem;
+    margin-top: 2px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Main ── */
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 48px 44px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+  }
+
+  .card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--teal-dark);
+    margin-bottom: 8px;
+  }
+  .card .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  /* ── Inputs ── */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  .field input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.97rem;
+    color: var(--text);
+    background: #fafaf8;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(23,111,111,0.12);
+    background: #fff;
+  }
+
+  /* ── Button ── */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .btn:hover  { background: var(--teal-dark); }
+  .btn:active { transform: scale(0.99); }
+  .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* ── Mensagens ── */
+  .msg {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    display: none;
+  }
+  .msg.error   { background: #fdf0ee; border: 1px solid #e8b4ae; color: var(--error); }
+  .msg.success { background: var(--teal-light); border: 1px solid #b0d8d8; color: var(--teal-dark); }
+  .msg.info    { background: #fdf8ee; border: 1px solid #e8d8ae; color: #7a5a10; }
+  .msg.show    { display: block; }
+
+  /* ── Fallback nome ── */
+  #nome-fallback { display: none; margin-top: 20px; }
+  #nome-fallback .sep {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    position: relative;
+  }
+  #nome-fallback .sep::before,
+  #nome-fallback .sep::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 38%;
+    height: 1px;
+    background: var(--border);
+  }
+  #nome-fallback .sep::before { left: 0; }
+  #nome-fallback .sep::after  { right: 0; }
+
+  /* ── Resultados ── */
+  #resultados { display: none; margin-top: 28px; }
+  #resultados h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--teal-dark);
+    margin-bottom: 14px;
+  }
+
+  .cert-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cert-item .info { flex: 1; }
+  .cert-item .info .tipo {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 3px;
+  }
+  .cert-item .info .titulo-cert {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .btn-dl {
+    flex-shrink: 0;
+    padding: 9px 18px;
+    background: var(--wine);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-dl:hover { background: #7a2a2a; }
+  .btn-dl:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Períodos ── */
+  .periodos-box {
+    display: none;
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--teal-light);
+    border: 1px solid #b0d8d8;
+    border-radius: 8px;
+  }
+  .periodos-box h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--teal-dark);
+    margin-bottom: 14px;
+  }
+  .periodos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .periodo-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    font-size: 0.85rem;
+    color: var(--text);
+    user-select: none;
+  }
+  .periodo-item:hover { border-color: var(--teal); }
+  .periodo-item input { accent-color: var(--teal); cursor: pointer; }
+  .periodo-item.checked { border-color: var(--teal); background: var(--teal-light); }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <h1>Avistar 2026</h1>
+    <p>Emissão de Certificados · Encontro Brasileiro de Observação de Aves</p>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Seu Certificado</h2>
+    <p class="subtitle">Digite o e-mail usado na inscrição para localizar e baixar seu certificado.</p>
+
+    <!-- Campo email -->
+    <div class="field">
+      <label>E-mail de inscrição</label>
+      <input type="email" id="input-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <button class="btn" id="btn-buscar" onclick="buscarPorEmail()">Buscar certificado</button>
+
+    <!-- Mensagem principal -->
+    <div class="msg" id="msg-principal"></div>
+
+    <!-- Fallback: busca por nome -->
+    <div id="nome-fallback">
+      <div class="sep">ou busque pelo nome</div>
+      <div class="field">
+        <label>Nome completo</label>
+        <input type="text" id="input-nome" placeholder="Como está na sua inscrição" autocomplete="name">
+      </div>
+      <button class="btn" onclick="buscarPorNome()">Buscar pelo nome</button>
+      <div class="msg" id="msg-nome"></div>
+    </div>
+
+    <!-- Resultados -->
+    <!-- Seleção de períodos -->
+<div class="periodos-box" id="periodos-box">
+  <h4>Em quais períodos você participou?</h4>
+  <div class="periodos-grid">
+    <label class="periodo-item" id="lbl-sm" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sm"> Sexta manhã
+    </label>
+    <label class="periodo-item" id="lbl-st" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-st"> Sexta tarde
+    </label>
+    <label class="periodo-item" id="lbl-sam" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sam"> Sábado manhã
+    </label>
+    <label class="periodo-item" id="lbl-sat" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-sat"> Sábado tarde
+    </label>
+    <label class="periodo-item" id="lbl-dm" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-dm"> Domingo manhã
+    </label>
+    <label class="periodo-item" id="lbl-dt" onclick="togglePeriodo(this)">
+      <input type="checkbox" value="4" id="p-dt"> Domingo tarde
+    </label>
+  </div>
+  <button class="btn" id="btn-gerar-part" onclick="confirmarPeriodos()" disabled>
+    Gerar certificado de participação
+  </button>
+</div>
+
+<div id="resultados">
+      <h3 id="resultado-saudacao"></h3>
+      <div id="lista-certs"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Avistar 2026 · Jardim Botânico de São Paulo · 15 a 17 de maio de 2026
+  <br><br>
+  <a href="https://www.tytobiodata.com/" target="_blank" style="display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--muted);font-size:0.78rem;opacity:0.7;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+    <img src="tyto_logo.png" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">
+    Solução inspirada por Tyto Biodata
+  </a>
+  <br><br>
+  <a href="mailto:avistarconecta@gmail.com" style="
+    display: inline-block;
+    padding: 9px 20px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  " onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'"
+     onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+    ✉ Dúvidas? Fale conosco
+  </a>
+</footer>
+
+<script>
+// ── Estado ────────────────────────────────────────────────────────────────
+let DB_INSCRITOS    = null;
+let DB_NOMES        = null;
+let DB_PALESTRANTES = null;
+let DB_COAUTORES    = null;
+let pdfBaseBytes    = null;
+let ubuntuBytes     = null;
+let ubuntuBoldBytes = null;
+
+// ── Carregamento dos dados ────────────────────────────────────────────────
+async function carregarDados() {
+  const base = window.location.pathname.replace(/\/[^/]*$/, '');
+  const [ins, nom, pal, coaut, pdf, font, fontB] = await Promise.all([
+    fetch(`${base}/inscritos.json`).then(r => r.json()),
+    fetch(`${base}/inscritos_por_nome.json`).then(r => r.json()),
+    fetch(`${base}/palestrantes.json`).then(r => r.json()),
+    fetch(`${base}/coautores.json`).then(r => r.json()),
+    fetch(`${base}/certificados.pdf`).then(r => r.arrayBuffer()),
+    fetch(`${base}/Ubuntu-Regular.ttf`).then(r => r.arrayBuffer()),
+    fetch(`${base}/Ubuntu-Bold.ttf`).then(r => r.arrayBuffer()),
+  ]);
+  DB_INSCRITOS    = ins;
+  DB_NOMES        = nom;
+  DB_PALESTRANTES = pal;
+  DB_COAUTORES    = coaut;
+  pdfBaseBytes    = pdf;
+  ubuntuBytes     = font;
+  ubuntuBoldBytes = fontB;
+}
+
+const dadosPromise = carregarDados();
+
+// ── Normalização ──────────────────────────────────────────────────────────
+function normEmail(e) { return e.trim().toLowerCase(); }
+function normNome(n) {
+  return n.trim().toUpperCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+// ── Busca por email ───────────────────────────────────────────────────────
+async function buscarPorEmail() {
+  await dadosPromise;
+  const email = normEmail(document.getElementById('input-email').value);
+  if (!email) { showMsg('msg-principal', 'error', 'Por favor, digite seu e-mail.'); return; }
+
+  // Bloqueia reemissão na mesma sessão
+  if (sessionStorage.getItem('cert_emitido_' + email)) {
+    showMsg('msg-principal', 'error',
+      'Certificado já emitido nessa sessão!');
+    return;
+  }
+
+  const inscrito    = DB_INSCRITOS[email]    || null;
+  const palestrante = DB_PALESTRANTES[email] || null;
+
+  if (!inscrito && !palestrante) {
+    showMsg('msg-principal', 'info',
+      'E-mail não encontrado na base principal. Se você é coautor(a) de um trabalho, digite seu nome completo abaixo para buscarmos.');
+    document.getElementById('nome-fallback').style.display = 'block';
+    document.getElementById('resultados').style.display = 'none';
+    return;
+  }
+
+  showMsg('msg-principal', 'success', 'Inscrição encontrada! Seus certificados estão prontos.');
+  document.getElementById('nome-fallback').style.display = 'none';
+  mostrarResultados(inscrito, palestrante, null);
+}
+
+// ── Busca por nome ────────────────────────────────────────────────────────
+async function buscarPorNome() {
+  await dadosPromise;
+  const nomeDigitado = document.getElementById('input-nome').value;
+  const chave = normNome(nomeDigitado);
+  if (!chave) { showMsg('msg-nome', 'error', 'Por favor, digite seu nome completo.'); return; }
+
+  const inscrito    = DB_NOMES[chave] || null;
+  const coautor     = DB_COAUTORES[chave] || null;
+
+  if (!inscrito && !coautor) {
+    showMsg('msg-nome', 'error',
+      'Nome não encontrado. Verifique se digitou exatamente como estava na inscrição ou no trabalho submetido.');
+    return;
+  }
+
+  // Palestrante pelo nome (1º autor)
+  const palestrante = Object.entries(DB_PALESTRANTES)
+    .find(([, works]) => normNome(works[0]?.autores?.split(',')[0] || '') === chave)?.[1] || null;
+
+  hideMsg('msg-nome');
+  showMsg('msg-principal', 'success', 'Encontrado! Seus certificados estão prontos.');
+  mostrarResultados(inscrito, palestrante, coautor);
+}
+
+// ── Exibe certificados disponíveis ───────────────────────────────────────
+function mostrarResultados(inscrito, palestrante, coautor) {
+  const lista = document.getElementById('lista-certs');
+  lista.innerHTML = '';
+
+  const nome = inscrito?.nome || palestrante?.[0]?.autores?.split(',')[0] || 'Participante';
+  document.getElementById('resultado-saudacao').textContent = `Olá, ${nome}`;
+
+  // Certificado de participação — guarda inscrito para usar após seleção de períodos
+  if (inscrito) {
+    window._inscritoAtual = inscrito;
+    document.getElementById('periodos-box').style.display = 'block';
+    // reset checkboxes
+    document.querySelectorAll('.periodo-item input').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.periodo-item').classList.remove('checked');
+    });
+    document.getElementById('btn-gerar-part').disabled = true;
+  }
+
+  // Certificado(s) de apresentação (1º autor)
+  if (palestrante) {
+    palestrante.forEach((trabalho) => {
+      const label = trabalho.label.charAt(0).toUpperCase() + trabalho.label.slice(1);
+      lista.appendChild(criarItemCert(
+        `Certificado de ${label}`,
+        trabalho.titulo.length > 70 ? trabalho.titulo.slice(0, 70) + '…' : trabalho.titulo,
+        () => gerarCertPalestrante(trabalho)
+      ));
+    });
+  }
+
+  // Certificado(s) de coautoria
+  if (coautor) {
+    coautor.forEach((trabalho) => {
+      const label = trabalho.label.charAt(0).toUpperCase() + trabalho.label.slice(1);
+      lista.appendChild(criarItemCert(
+        `Certificado de Coautoria — ${label}`,
+        trabalho.titulo.length > 70 ? trabalho.titulo.slice(0, 70) + '…' : trabalho.titulo,
+        () => gerarCertPalestrante(trabalho)
+      ));
+    });
+  }
+
+  document.getElementById('resultados').style.display = 'block';
+}
+
+function criarItemCert(tipo, titulo, onDownload) {
+  const div = document.createElement('div');
+  div.className = 'cert-item';
+  div.innerHTML = `
+    <div class="info">
+      <div class="tipo">${tipo}</div>
+      <div class="titulo-cert">${titulo}</div>
+    </div>
+    <button class="btn-dl" onclick="this.__dl()">
+      ⬇ Baixar PDF
+    </button>`;
+  div.querySelector('.btn-dl').__dl = async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Gerando…';
+    try { await onDownload(); } catch(e) { console.error(e); }
+    btn.disabled = false;
+    btn.innerHTML = '⬇ Baixar PDF';
+  };
+  return div;
+}
+
+// ── Geração de PDF — participante ─────────────────────────────────────────
+async function gerarCertParticipante(inscrito, horas) {
+  const { PDFDocument, rgb, StandardFonts } = PDFLib;
+
+  const pdfDoc = await PDFDocument.load(pdfBaseBytes);
+  pdfDoc.registerFontkit(fontkit);
+
+  const fontReg  = await pdfDoc.embedFont(ubuntuBytes);
+  const fontBold = await pdfDoc.embedFont(ubuntuBoldBytes);
+
+  const page = pdfDoc.getPages()[0];
+  const { width, height } = page.getSize();
+
+  const TEAL = rgb(0.09, 0.40, 0.42);
+  const DARK = rgb(0.15, 0.15, 0.15);
+
+  const xLeft  = 211.8;
+  const xRight = 522.0;
+  const maxW   = xRight - xLeft;
+  const cx     = (xLeft + xRight) / 2;
+  const SN = 12, SD = 14;
+  const LHN = 19, LHD = 24, GAP = 24;
+
+  // Segmentos: [{text, bold}]
+  const segs = [
+    { text: "A Comissão Organizadora do Encontro Brasileiro de Observação de Aves certifica que", bold: false },
+  ];
+  const nome = inscrito.nome;
+  const sufixo = horas
+    ? ` da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo, tendo cumprido `
+    : ` da 20ª edição do Avistar 2026, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo.`;
+  const corpo = [
+    { text: "participou como ", bold: false },
+    { text: inscrito.credencial + " ", bold: true },
+    { text: sufixo, bold: false },
+    ...(horas ? [
+      { text: `${horas} horas`, bold: true },
+      { text: " de atividades.", bold: false },
+    ] : []),
+  ];
+
+  // Quebrar linhas
+  const lIntro  = wrapText(segs[0].text, fontReg,  SN, maxW);
+  const lNome   = wrapText(nome,          fontBold, SD, maxW);
+  const lCorpo  = wrapSegments(corpo, SN, maxW, fontReg, fontBold);
+
+  const totalH = lIntro.length * LHN + GAP +
+                 lNome.length  * LHD + GAP +
+                 lCorpo.length * LHN;
+
+  const areaTop    = height - 111.9;
+  const areaBottom = height - 651.8;
+  let y = areaBottom + ((areaTop - areaBottom) + totalH) / 2;
+
+  // Intro — esquerda
+  for (const line of lIntro) {
+    page.drawText(line, { x: xLeft, y, font: fontReg, size: SN, color: DARK });
+    y -= LHN;
+  }
+  y -= GAP;
+
+  // Nome — centralizado teal
+  for (const line of lNome) {
+    const tw = fontBold.widthOfTextAtSize(line, SD);
+    page.drawText(line, { x: cx - tw/2, y, font: fontBold, size: SD, color: TEAL });
+    y -= LHD;
+  }
+  y -= GAP;
+
+  // Corpo com credencial inline
+  for (const lineTokens of lCorpo) {
+    let x = xLeft;
+    for (const { text, bold } of lineTokens) {
+      const font = bold ? fontBold : fontReg;
+      page.drawText(text, { x, y, font, size: SN, color: bold ? TEAL : DARK });
+      x += font.widthOfTextAtSize(text, SN);
+    }
+    y -= LHN;
+  }
+
+  const pdfBytes = await pdfDoc.save({
+    permissions: {
+      printing: 'highResolution',
+      copying: false,
+      modifyAnnotations: false,
+      modifyContents: false,
+    },
+    ownerPassword: 'Pira4#ara',
+    userPassword: undefined,
+    encryptionKey: 128,
+  });
+  // Marca sessão como emitida
+  const emailAtual = normEmail(document.getElementById('input-email').value);
+  if (emailAtual) sessionStorage.setItem('cert_emitido_' + emailAtual, '1');
+  download(pdfBytes, `certificado_${nome.replace(/\s+/g,'_')}.pdf`);
+}
+
+// ── Geração de PDF — palestrante ──────────────────────────────────────────
+async function gerarCertPalestrante(trabalho) {
+  const { PDFDocument, rgb } = PDFLib;
+
+  const pdfDoc = await PDFDocument.load(pdfBaseBytes);
+  pdfDoc.registerFontkit(fontkit);
+
+  const fontReg  = await pdfDoc.embedFont(ubuntuBytes);
+  const fontBold = await pdfDoc.embedFont(ubuntuBoldBytes);
+
+  const page = pdfDoc.getPages()[0];
+  const { width, height } = page.getSize();
+
+  const TEAL = rgb(0.09, 0.40, 0.42);
+  const DARK = rgb(0.15, 0.15, 0.15);
+
+  const xLeft  = 211.8;
+  const xRight = 522.0;
+  const maxW   = xRight - xLeft;
+  const cx     = (xLeft + xRight) / 2;
+  const SN = 12, ST = 13, SA = 12;
+  const LHN = 19, LHT = 22, LHA = 19, GAP = 24;
+
+  const intro   = `A Organização do Congresso Avistar 2026 certifica que ${trabalho.artigo} ${trabalho.label}`;
+  const autoria = "de autoria de";
+  const encerra = `${trabalho.verbo} na 20ª edição do Encontro Brasileiro de Observação de Aves, realizada entre os dias 15 e 17 de maio de 2026 no Jardim Botânico de São Paulo.`;
+
+  const lIntro   = wrapText(intro,          fontReg,  SN, maxW);
+  const lTitulo  = wrapText(trabalho.titulo, fontBold, ST, maxW);
+  const lAutoria = wrapText(autoria,         fontReg,  SN, maxW);
+  const lAutores = wrapText(trabalho.autores,fontBold, SA, maxW);
+  const lEncerra = wrapText(encerra,         fontReg,  SN, maxW);
+
+  const totalH = lIntro.length   * LHN + GAP +
+                 lTitulo.length  * LHT + GAP +
+                 lAutoria.length * LHN + GAP +
+                 lAutores.length * LHA + GAP +
+                 lEncerra.length * LHN;
+
+  const areaTop    = height - 111.9;
+  const areaBottom = height - 651.8;
+  let y = areaBottom + ((areaTop - areaBottom) + totalH) / 2;
+
+  const drawLeft = (lines, font, size, lh, color) => {
+    for (const l of lines) {
+      page.drawText(l, { x: xLeft, y, font, size, color });
+      y -= lh;
+    }
+  };
+  const drawCenter = (lines, font, size, lh, color) => {
+    for (const l of lines) {
+      const tw = font.widthOfTextAtSize(l, size);
+      page.drawText(l, { x: cx - tw/2, y, font, size, color });
+      y -= lh;
+    }
+  };
+
+  drawLeft(lIntro,   fontReg,  SN, LHN, DARK); y -= GAP;
+  drawCenter(lTitulo, fontBold, ST, LHT, TEAL); y -= GAP;
+  drawLeft(lAutoria, fontReg,  SN, LHN, DARK); y -= GAP;
+  drawCenter(lAutores,fontBold, SA, LHA, TEAL); y -= GAP;
+  drawLeft(lEncerra, fontReg,  SN, LHN, DARK);
+
+  const pdfBytes = await pdfDoc.save({
+    permissions: {
+      printing: 'highResolution',
+      copying: false,
+      modifyAnnotations: false,
+      modifyContents: false,
+    },
+    ownerPassword: 'Pira4#ara',
+    userPassword: undefined,
+    encryptionKey: 128,
+  });
+  // Marca sessão como emitida
+  const emailAtual = normEmail(document.getElementById('input-email').value);
+  if (emailAtual) sessionStorage.setItem('cert_emitido_' + emailAtual, '1');
+  const safeName = trabalho.titulo.slice(0,30).replace(/\s+/g,'_').replace(/[^\w_]/g,'');
+  download(pdfBytes, `certificado_${safeName}.pdf`);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function wrapText(text, font, size, maxW) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (font.widthOfTextAtSize(test, size) <= maxW) {
+      line = test;
+    } else {
+      if (line) lines.push(line);
+      line = w;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function wrapSegments(segments, size, maxW, fontReg, fontBold) {
+  // Concatena tudo num stream de {text, bold} preservando espaços
+  const tokens = [];
+  for (const { text, bold } of segments) {
+    // Divide preservando os espaços como tokens separados
+    const parts = text.split(/( +)/);
+    for (const part of parts) {
+      if (part.length > 0) tokens.push({ text: part, bold });
+    }
+  }
+
+  const lines = [];
+  let line = [], lineW = 0;
+  for (const { text, bold } of tokens) {
+    const font = bold ? fontBold : fontReg;
+    const tw = font.widthOfTextAtSize(text, size);
+    if (lineW + tw <= maxW) {
+      line.push({ text, bold }); lineW += tw;
+    } else {
+      if (line.length) lines.push(line);
+      line = [{ text, bold }]; lineW = tw;
+    }
+  }
+  if (line.length) lines.push(line);
+  return lines;
+}
+
+function togglePeriodo(label) {
+  const cb = label.querySelector('input');
+  // O click já vai alternar o checkbox — aguarda o tick
+  setTimeout(() => {
+    label.classList.toggle('checked', cb.checked);
+    atualizarHoras();
+  }, 0);
+}
+
+function atualizarHoras() {
+  const checkboxes = document.querySelectorAll('.periodos-grid input[type=checkbox]');
+  const total = Array.from(checkboxes).filter(c => c.checked).reduce((s, c) => s + parseInt(c.value), 0);
+  const btn   = document.getElementById('btn-gerar-part');
+  if (total === 0) {
+    btn.disabled = true;
+  } else {
+    btn.disabled = false;
+  }
+}
+
+function confirmarPeriodos() {
+  const checkboxes = document.querySelectorAll('.periodos-grid input[type=checkbox]');
+  const total = Array.from(checkboxes).filter(c => c.checked).reduce((s, c) => s + parseInt(c.value), 0);
+  if (total === 0 || !window._inscritoAtual) return;
+
+  // Esconde seletor e mostra botão de download nos resultados
+  document.getElementById('periodos-box').style.display = 'none';
+
+  const lista = document.getElementById('lista-certs');
+  // Remove item de participação anterior se existir
+  const existing = document.getElementById('cert-participacao');
+  if (existing) existing.remove();
+
+  const item = criarItemCert(
+    'Certificado de Participação',
+    `${window._inscritoAtual.credencial} · Avistar 2026`,
+    () => gerarCertParticipante(window._inscritoAtual, total)
+  );
+  item.id = 'cert-participacao';
+  // Insere no início da lista
+  lista.insertBefore(item, lista.firstChild);
+  document.getElementById('resultados').style.display = 'block';
+}
+
+async function download(bytes, filename) {
+  // Rasteriza cada página em imagem e reembala num novo PDF
+  const rasterBytes = await rasterizarPDF(bytes);
+  const blob = new Blob([rasterBytes], { type: 'application/pdf' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+async function rasterizarPDF(bytes) {
+  const { PDFDocument } = PDFLib;
+
+  // Configura worker local
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+
+  // Carrega PDF original no pdfjs
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
+  const pdfJs = await loadingTask.promise;
+
+  // Novo PDF para receber as imagens
+  const novoPdf = await PDFDocument.create();
+
+  for (let i = 1; i <= pdfJs.numPages; i++) {
+    const page    = await pdfJs.getPage(i);
+    const viewport = page.getViewport({ scale: 2.5 }); // 2.5x = ~180dpi, boa qualidade de impressão
+
+    // Renderiza num canvas offscreen
+    const canvas  = document.createElement('canvas');
+    canvas.width  = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Exporta como JPEG e embute no novo PDF
+    const imgData  = canvas.toDataURL('image/jpeg', 0.92);
+    const imgBytes = Uint8Array.from(atob(imgData.split(',')[1]), c => c.charCodeAt(0));
+    const img      = await novoPdf.embedJpg(imgBytes);
+
+    const novaPage = novoPdf.addPage([viewport.width / 2.5, viewport.height / 2.5]);
+    novaPage.drawImage(img, {
+      x: 0, y: 0,
+      width:  viewport.width  / 2.5,
+      height: viewport.height / 2.5,
+    });
+  }
+
+  return await novoPdf.save();
+}
+
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  el.className = `msg ${type} show`;
+  el.textContent = text;
+}
+function hideMsg(id) {
+  const el = document.getElementById(id);
+  el.className = 'msg';
+}
+
+// Enter nos inputs
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('input-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') buscarPorEmail();
+  });
+  document.getElementById('input-nome').addEventListener('keydown', e => {
+    if (e.key === 'Enter') buscarPorNome();
+  });
+});
+</script>
+</body>
+</html>
